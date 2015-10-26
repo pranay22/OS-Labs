@@ -49,7 +49,6 @@ int main(){
 				printf("Failed in wait(). Error: %s \n", strerror(errno));
 				exit(0);
 			}
-			printf("what wait() returns? %d\n", test);
 			printf("Waited for child. Child now terminated. Exit Code: %d; my_value: %d\n", childec, my_value);
 		}
 	}
