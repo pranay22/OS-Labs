@@ -17,7 +17,7 @@ Change Question 1.1 if needed. */
 int my_value = 42;
 
 int main(){
-	pid_t cPID;
+	pid_t cPID, test;
 	int childec;
 	
 
@@ -44,7 +44,12 @@ int main(){
 			//in parent process
 			printf("Inside parent again. PID is: %d; my_value: %d\n", getpid(), my_value);
 			//Waiting for child
-			wait(&childec);
+			test = wait(&childec);
+			if (test == -1){
+				printf("Failed in wait(). Error: %s \n", strerror(errno));
+				exit(0);
+			}
+			printf("what wait() returns? %d\n", test);
 			printf("Waited for child. Child now terminated. Exit Code: %d; my_value: %d\n", childec, my_value);
 		}
 	}
