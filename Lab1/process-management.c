@@ -9,7 +9,7 @@
 /* Lab 1: Task 1.1:*/
 
 
-/* TO_DO: Change to fprintf(); remove source from the answer of Question 1.1
+/* TO_DO:  remove source from the answer of Question 1.1
 Change Question 1.1 if needed. */
 
 
@@ -21,13 +21,13 @@ int main(){
 	int childec;
 	
 
-	printf("This is parent. PID is: %d\n", getpid());
-	printf("Inside Parent. PID is: %d\n", getpid());
+	fprintf(stderr, "This is parent. PID is: %d\n", getpid());
+	fprintf(stderr, "Inside Parent. PID is: %d\n", getpid());
 	// Attempt to fork
 	cPID = fork();		//fork() returns  0 to the child process and  PID of the child process to the parent process
 	if(cPID > 0){
 		//catch one return of fork to parent (i.e. PID of Child)
-		printf("Child created. PID: %d\n", cPID);
+		fprintf(stderr, "Child created. PID: %d\n", cPID);
 	}
 	usleep(150000);		//delay of 150ms after fork()  -- usleep(uSec)
 	if(cPID >= 0){
@@ -37,7 +37,7 @@ int main(){
 			//inside child process
 			usleep(500000);		//500ms delay in child process  -- usleep(uSec)
 			my_value = 18951;	//changing 'my_value' inside child
-			printf("I am child. PID : %d; my_value: %d\n", getpid(), my_value);
+			fprintf(stderr, "I am child. PID : %d; my_value: %d\n", getpid(), my_value);
 			
 		}
 		else {
@@ -46,15 +46,15 @@ int main(){
 			//Waiting for child
 			test = wait(&childec);
 			if (test == -1){
-				printf("Failed in wait(). Error: %s \n", strerror(errno));
-				exit(0);
+				fprintf(stderr, "Failed in wait(). Error: %s \n", strerror(errno));
+				exit(1);
 			}
-			printf("Waited for child. Child now terminated. Exit Code: %d; my_value: %d\n", childec, my_value);
+			fprintf(stderr, "Waited for child. Child now terminated. PID: %d; Exit Code: %d; my_value: %d\n",cPID, childec, my_value);
 		}
 	}
 	else{
-		printf("Failed to fork. Error : %s \n", strerror(errno));
-		exit(0);
+		fprintf(stderr, "Failed to fork. Error : %s \n", strerror(errno));
+		exit(2);
 	}
 	return 0;
 }
