@@ -5,12 +5,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 
 /* Lab 1: Task 1.1:*/
 
 
+
+
 //Mentioned global variable
 int my_value = 42;
+
+void* thread_func
 
 int main(){
 	pid_t cPID, test;

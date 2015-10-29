@@ -1,0 +1,5 @@
+Question 1.1: If program is executed 100 times PID of parent & child will be different. As at different execution times PID will be different (obviously). 
+my_value: Parent prints: 42, Child prints: 18951.
+Reason: Process can change their own variables independently and they will change without any noticible effect on other process which are fork() of parent, siblings and descendents.
+But OS share pages initially. So we can use mmap() to really share global vars.
+Source: stackoverflow.com/questions/4298678/after-forking-are-global-variables-shared
