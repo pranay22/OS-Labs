@@ -12,10 +12,6 @@
 /* Lab 1: Task 1.1:*/
 
 
-/* TO_DO:  remove source from the answer of Question 1.1
-Change Question 1.1 if needed. */
-
-
 //Mentioned global variable
 int my_value = 42;
 
@@ -50,9 +46,3 @@ int main(){
     }
 	return 0;
 }
-
-/* Question 1.1: If program is executed 100 times PID of parent & child will be different. As at different execution times PID will be different (obviously). 
-my_value: Parent prints: 42, Child prints: 18951.
-Reason: Process cna change their own variables independently and they will change without any noticible effect on other process which are fork() of parent, siblings and descendents.
-But OS share pages initially. So we can use mmap() to reallx share global vars.
-Source: stackoverflow.com/questions/4298678/after-forking-are-global-variables-shared */
