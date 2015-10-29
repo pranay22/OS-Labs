@@ -16,14 +16,17 @@ int my_value = 42;
  * The child process' code put into a function for threading
  */
 void* thread_func(void* in){
-	usleep(500000);		//500ms delay in child process  -- usleep(uSec)
 	my_value = 18951;	//changing 'my_value' inside child
 	fprintf(stderr, "I am child-thread. PID : %d; my_value: %d\n", getpid(), my_value);
-	pthread_exit(0);
+	usleep(500000);		//500ms delay in child process  -- usleep(uSec)
+	int* retval = malloc(sizeof(int));	
+	*retval = 0;	
+	pthread_exit((void*)retval);
 }
 
 int main(){
-	int  thread_err, thread_retval;
+	int  thread_err;
+	int* thread_retval;	
 	pthread_t my_thread;
 
 	fprintf(stderr, "This is parent-thread. PID is: %d\n", getpid());
@@ -41,14 +44,14 @@ int main(){
 	//in parent process
 	printf("Inside parent-thread. PID is: %d; my_value: %d\n", getpid(), my_value);
 	//Waiting for child
-	thread_err = pthread_join(my_thread, &thread_retval);
+	thread_err = pthread_join(my_thread, (void**) &thread_retval);
 	//Error handling for joining
 	if (thread_err){
 		fprintf(stderr, "Child-thread joining failed with exit code %d\n", thread_err);
 		exit(thread_err);
 	}
 	else{
-		fprintf(stderr, "Waited for child-thread. Child now terminated. Exit Code: %d; my_value: %d\n", thread_retval, my_value);
+		fprintf(stderr, "Waited for child-thread. Child now terminated. Exit Code: %d; my_value: %d\n", *thread_retval, my_value);
 	}
 	return 0;
 }
