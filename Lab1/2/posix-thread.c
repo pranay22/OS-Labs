@@ -7,55 +7,48 @@
 #include <string.h>
 #include <pthread.h>
 
-/* Lab 1: Task 1.1:*/
-
-
-
+/* Lab 1: Task 1.2:*/
 
 //Mentioned global variable
 int my_value = 42;
 
-void* thread_func
+/*
+ * The child process' code put into a function for threading
+ */
+void* thread_func(void* in){
+	usleep(500000);		//500ms delay in child process  -- usleep(uSec)
+	my_value = 18951;	//changing 'my_value' inside child
+	fprintf(stderr, "I am child-thread. PID : %d; my_value: %d\n", getpid(), my_value);
+	pthread_exit(0);
+}
 
 int main(){
-	pid_t cPID, test;
-	int childec;
-	
+	int  thread_err, thread_retval;
+	pthread_t my_thread;
 
-	fprintf(stderr, "This is parent. PID is: %d\n", getpid());
-	fprintf(stderr, "Inside Parent. PID is: %d\n", getpid());
-	// Attempt to fork
-	cPID = fork();		//fork() returns  0 to the child process and  PID of the child process to the parent process
-	if(cPID > 0){
-		//catch one return of fork to parent (i.e. PID of Child)
-		fprintf(stderr, "Child created. PID: %d\n", cPID);
-	}
-	usleep(150000);		//delay of 150ms after fork()  -- usleep(uSec)
-	if(cPID >= 0){
-	//fork sucessful
-	
-		if (cPID == 0){
-			//inside child process
-			usleep(500000);		//500ms delay in child process  -- usleep(uSec)
-			my_value = 18951;	//changing 'my_value' inside child
-			fprintf(stderr, "I am child. PID : %d; my_value: %d\n", getpid(), my_value);
-			
-		}
-		else {
-			//in parent process
-			printf("Inside parent again. PID is: %d; my_value: %d\n", getpid(), my_value);
-			//Waiting for child
-			test = wait(&childec);
-			if (test == -1){
-				fprintf(stderr, "Failed in wait(). Error: %s \n", strerror(errno));
-				exit(1);
-			}
-			fprintf(stderr, "Waited for child. Child now terminated. PID: %d; Exit Code: %d; my_value: %d\n",cPID, childec, my_value);
-		}
+	fprintf(stderr, "This is parent-thread. PID is: %d\n", getpid());
+	// Attempt to create a new child-thread
+	thread_err = pthread_create(&my_thread, NULL, thread_func, NULL);
+	// Error handling for thread creation		
+	if (thread_err){
+		fprintf(stderr, "Child-thread creation failed with exit code %d\n", thread_err);
+		exit(thread_err);
 	}
 	else{
-		fprintf(stderr, "Failed to fork. Error : %s \n", strerror(errno));
-		exit(2);
+		fprintf(stderr, "Child-thread created.\n");
+	}	
+	usleep(150000);		//delay of 150ms after pthread_create()  -- usleep(uSec)
+	//in parent process
+	printf("Inside parent-thread. PID is: %d; my_value: %d\n", getpid(), my_value);
+	//Waiting for child
+	thread_err = pthread_join(my_thread, &thread_retval);
+	//Error handling for joining
+	if (thread_err){
+		fprintf(stderr, "Child-thread joining failed with exit code %d\n", thread_err);
+		exit(thread_err);
+	}
+	else{
+		fprintf(stderr, "Waited for child-thread. Child now terminated. Exit Code: %d; my_value: %d\n", thread_retval, my_value);
 	}
 	return 0;
 }

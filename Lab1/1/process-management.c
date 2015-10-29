@@ -31,10 +31,10 @@ int main(){
 	
 		if (cPID == 0){
 			//inside child process
-			usleep(500000);		//500ms delay in child process  -- usleep(uSec)
+			
 			my_value = 18951;	//changing 'my_value' inside child
 			fprintf(stderr, "I am child. PID : %d; my_value: %d\n", getpid(), my_value);
-			
+			usleep(500000);		//500ms delay in child process  -- usleep(uSec)
 		}
 		else {
 			//in parent process
