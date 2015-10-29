@@ -1,8 +1,8 @@
 #Makefile for compiing & executing the program
 #OS-Labs at Technische Universität Darmstadt
 
-all: process-management.c
-	gcc -Wall -o process-management.o process-management.c
-	./process-management.o
+all: pipe.c
+	gcc -Wall -o pipe.o pipe.c
+	./pipe.o
 clean:
-	$(RM) process-management.o
+	$(RM) pipe.o
