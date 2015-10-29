@@ -1,8 +1,15 @@
 #Makefile for compiing & executing the program
 #OS-Labs at Technische Universität Darmstadt
 
-all: process-management.c
-	gcc -Wall -o process-management.o process-management.c
-	./process-management.o
+CFLAG= -Wall
+CC=gcc
+RM= rm -f 
+
+
+all: process_mng
+
+process_mng: 
+	$(CC) $(CFLAG) -o process_mng process-management.c
+
 clean:
-	$(RM) process-management.o
+	$(RM) process_mng

@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define CSLEEP 500000
+#define SLEEP 150000
+
 /* Lab 1: Task 1.1:*/
 
 
@@ -17,45 +20,34 @@ Change Question 1.1 if needed. */
 int my_value = 42;
 
 int main(){
-	pid_t cPID, test;
-	int childec;
+	pid_t cPID ;
 	
+	fprintf(stdout, "This is parent. PID is: %d\n", getpid());
+	//fprintf(stdout, "Inside Parent. PID is: %d\n", getpid());
+    
+    if((cPID=fork())<0){
+        fprintf(stderr,"Fork Error");
+        exit(1);
+    }
+    else
+    {
+        usleep(SLEEP);
+        if(cPID==0){
+        my_value=18951;
+        fprintf(stdout,"I'm the child, PID=%d, my_value=%d\n", getpid(), my_value);
+        usleep(CSLEEP);
+        exit(0);
+        }
+        if(cPID>0)
+        {
+            fprintf(stdout,"I'm the parent, PID=%d,my_value=%d\n",getpid(),my_value);
+            fprintf(stdout,"Child fork successful\n");
+            wait(NULL);
+            fprintf(stdout,"CHILD Terminated\n");
+            exit(0);
+        }
 
-	fprintf(stderr, "This is parent. PID is: %d\n", getpid());
-	fprintf(stderr, "Inside Parent. PID is: %d\n", getpid());
-	// Attempt to fork
-	cPID = fork();		//fork() returns  0 to the child process and  PID of the child process to the parent process
-	if(cPID > 0){
-		//catch one return of fork to parent (i.e. PID of Child)
-		fprintf(stderr, "Child created. PID: %d\n", cPID);
-	}
-	usleep(150000);		//delay of 150ms after fork()  -- usleep(uSec)
-	if(cPID >= 0){
-	//fork sucessful
-	
-		if (cPID == 0){
-			//inside child process
-			usleep(500000);		//500ms delay in child process  -- usleep(uSec)
-			my_value = 18951;	//changing 'my_value' inside child
-			fprintf(stderr, "I am child. PID : %d; my_value: %d\n", getpid(), my_value);
-			
-		}
-		else {
-			//in parent process
-			printf("Inside parent again. PID is: %d; my_value: %d\n", getpid(), my_value);
-			//Waiting for child
-			test = wait(&childec);
-			if (test == -1){
-				fprintf(stderr, "Failed in wait(). Error: %s \n", strerror(errno));
-				exit(1);
-			}
-			fprintf(stderr, "Waited for child. Child now terminated. PID: %d; Exit Code: %d; my_value: %d\n",cPID, childec, my_value);
-		}
-	}
-	else{
-		fprintf(stderr, "Failed to fork. Error : %s \n", strerror(errno));
-		exit(2);
-	}
+    }
 	return 0;
 }
 
