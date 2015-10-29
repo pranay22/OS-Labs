@@ -1,8 +1,14 @@
 #Makefile for compiing & executing the program
 #OS-Labs at Technische Universität Darmstadt
+CC= gcc
+CFLAG= -Wall
+EXEC= parent2child
+RM= rm -f
+all: $(EXEC) 
 
-all: pipe.c
-	gcc -Wall -o pipe.o pipe.c
-	./pipe.o
-clean:
-	$(RM) pipe.o
+parent2child: parent_2_child.c
+	$(CC) $(CFLAG) -o parent2child parent_2_child.c
+
+clean: 
+	$(RM) $(EXEC)
+
