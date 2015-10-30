@@ -2,7 +2,6 @@
 #OS-Labs at Technische Universität Darmstadt
 
 all: posix-thread.c
-	gcc -Wall -lpthread -o posix-thread.o posix-thread.c
-	./posix-thread.o
+	gcc -Wall -o posix-thread.o posix-thread.c -lpthread
 clean:
 	$(RM) posix-thread.o

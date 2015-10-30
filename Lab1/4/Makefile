@@ -3,6 +3,5 @@
 
 all: posix-mq.c
 	gcc -Wall -o posix-mq.o posix-mq.c -lrt
-	./posix-mq.o
 clean:
 	$(RM) posix-mq.o
