@@ -1,8 +1,15 @@
 #Makefile for compiing & executing the program
 #OS-Labs at Technische Universität Darmstadt
 
-all: process-management.c
-	gcc -Wall -o process-management.o process-management.c
-	./process-management.o
+CC=gcc
+CFLAGS=-Wall
+LDFLAGS= -lrt
+
+
+all: sh-mem
+   
+sh-mem: shared_memory.c
+	$(CC) $(CFLAGS) -o sh-mem shared_memory.c $(LDFLAGS)
+
 clean:
-	$(RM) process-management.o
+	$(RM) sh-mem
