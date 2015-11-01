@@ -16,11 +16,18 @@ int my_value = 42;
  * The child process' code put into a function for threading
  */
 void* thread_func(void* in){
+	if (usleep(150000) < 0) {  //delay of 150ms after pthread_create()  -- usleep(uSec)
+    fprintf(stderr, "Child:\tUSleep Error\n");
+    exit(1);
+  }
 	my_value = 18951;	//changing 'my_value' inside child
 	fprintf(stderr, "I am child-thread. PID : %d; my_value: %d\n", getpid(), my_value);
-	usleep(500000);		//500ms delay in child process  -- usleep(uSec)
-	int* retval = malloc(sizeof(int));	
-	*retval = 0;	
+	if (usleep(500000) < 0) {  //500ms delay in child process  -- usleep(uSec)
+    fprintf(stderr, "Child:\tUSleep Error\n");
+    exit(1);
+  }
+	int* retval = malloc(sizeof(int));
+	*retval = 0;
 	pthread_exit((void*)retval);
 }
 
