@@ -20,7 +20,7 @@ int main(){
 	
 	fprintf(stderr, "This is parent. PID is: %d\n", getpid());
     
-    if((cPID=fork())<0){
+    if ((cPID=fork())<0) {
         fprintf(stderr,"Fork Error\n");
         exit(1);
     }
@@ -30,24 +30,24 @@ int main(){
             fprintf(stderr, "USleep Error\n");
             exit(1);
         }
-        if(cPID==0){
-        my_value=18951;
-        fprintf(stderr,"I'm the child, PID=%d, my_value=%d\n", getpid(), my_value);
-        if (usleep(CSLEEP) < 0) {
-            fprintf(stderr, "USleep Error\n");
-            exit(1);
+        if (cPID==0) {
+            my_value=18951;
+            fprintf(stderr,"I'm the child, PID=%d, my_value=%d\n", getpid(), my_value);
+            if (usleep(CSLEEP) < 0) {
+                fprintf(stderr, "USleep Error\n");
+                exit(1);
+            }
+            exit(0);
         }
-        exit(0);
-        }
-        if(cPID>0)
+        else // if(cPID>0)
         {
             fprintf(stderr,"I'm the parent, PID=%d,my_value=%d\n",getpid(),my_value);
             fprintf(stderr,"Child fork successful\n");
             int wait_status;
             wait(&wait_status);
             if (wait_status < 0) {
-              fprintf(stderr, "Wait Error\n");
-              exit(1);
+                fprintf(stderr, "Wait Error\n");
+                exit(1);
             }
             fprintf(stderr,"Child Terminated\n");
             exit(0);
