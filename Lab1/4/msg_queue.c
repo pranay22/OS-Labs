@@ -32,14 +32,14 @@ int main (int argc, char ** argv)
     
     //Setting initial attributes
     MQAttr.mq_flags = 0; 	// Blocking queue  
-    MQAttr.mq_maxmsg = 1;  
+    MQAttr.mq_maxmsg = 10;  
     MQAttr.mq_msgsize = MAX_MQ_BUFFER;  
     MQAttr.mq_curmsgs = 0;
 
 #define NAME "/DEEDS_lab1_mq"
 
     //Creating a MQ
-    msgQ = mq_open(NAME, O_CREAT | O_WRONLY, 0644, &MQAttr);
+    msgQ = mq_open(NAME, O_CREAT, 0644, &MQAttr);
 	if(msgQ==-1)
 		fprintf(stderr, "Failed to create Message Queue. Error : %s \n", strerror(errno));
 
@@ -56,7 +56,7 @@ int main (int argc, char ** argv)
             //In the child
             mypid=getpid();
             my_value=18951;
-            fprintf(stdout,"I'm the child, PID=%d, my_value=%d\n",mypid,
+            fprintf(stderr,"I'm the child, PID=%d, my_value=%d\n",mypid,
             my_value);
             usleep(CSLEEP); // child sleeping
 
@@ -73,29 +73,28 @@ int main (int argc, char ** argv)
             // Print the read data and free memory
             fprintf(stderr, "Data received : %s \n", buffer);
             free(buffer);
-            //closing MQ in Child
-            error_checker(0 <= mq_close(msgQ), "Child: Closing MQ");
             exit(EXIT_SUCCESS);
         }
         if(cpid>0)
         {
             //In the parent
             mypid=getpid();
-            fprintf(stdout,"I'm the parent, PID=%d, my_value=%d\n",mypid, my_value);
+            fprintf(stderr,"I'm the parent, PID=%d, my_value=%d\n",mypid, my_value);
 
             sprintf(MQBuffer, "Hi, I am your parent. My PID: %d and my_value: %d", getpid(), my_value);
-            printf("Data to send to pipe:%s\n", MQBuffer);
+            fprintf(stderr, "Data to send to MQ:%s\n", MQBuffer);
 
             //parent: create, delete MQ (creation, deletion already done)
             // Open queue with WRITE access
             msgQ = mq_open(NAME, O_WRONLY);
+            error_checker(0 <= msgQ, "Opening MQ\n");
             //Writing to MQ
             error_checker(0 <= mq_send(msgQ, MQBuffer, sizeof(MQBuffer), 1), "Writing to MQ\n");
             wait(NULL); // waiting for the child
-            fprintf(stdout,"CHILD TERMINATED\n");
+            fprintf(stderr, "CHILD TERMINATED\n");
             //closing & deleting MQ
-            error_checker(0 <= mq_close(msgQ), "Parent: Closing MQ");
-            error_checker(0 <= mq_unlink(NAME), "Parent: Unlinking MQ");	
+            error_checker(0 <= mq_close(msgQ), "Closing MQ");
+            error_checker(0 <= mq_unlink(NAME), "Unlinking MQ");	
             exit(EXIT_SUCCESS);
         }
     }

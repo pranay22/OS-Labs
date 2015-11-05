@@ -4,7 +4,7 @@ and writes in the pipe whereas the child sleeps for 500 ms and after that reads 
 
 3.2 - 
 Cons:
-- You need two pipes to achieve bidirectional communication.
+- You need two pipes to achieve full bidirectional communication (pipes are half-duplex).
 - It can be a challenge to synchronize threads and depending on the relation model between user-threads 
 and kernel-threads it might block the application.
 Pros:
