@@ -1,0 +1,3 @@
+4.1 & 4.2 - The order of execution is different, parent is always first but sometimes data is being sent to the que first, 
+and sometimes child is being created first. For instance in a multithreaded application where multiple threads are writing in the same time 
+then message queues are a better option compared to pipes otherwise pipes are better.
