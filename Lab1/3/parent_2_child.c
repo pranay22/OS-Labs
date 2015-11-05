@@ -36,7 +36,7 @@ int main (int argc, char ** argv)
             mypid=getpid();
             close(*(pipefd+1)); // closing the write end of the pipe
             my_value=18951;
-            fprintf(stdout,"I'm the child, PID=%d, my_value=%d\n",mypid,
+            fprintf(stderr,"I'm the child, PID=%d, my_value=%d\n",mypid,
             my_value);
             usleep(CSLEEP); // child sleeping
             char message[256];
@@ -46,7 +46,7 @@ int main (int argc, char ** argv)
             }
             else
             {
-                fprintf(stdout,"%s\n",message);
+                fprintf(stderr,"%s\n",message);
             }
             exit(EXIT_SUCCESS);
 
@@ -56,13 +56,13 @@ int main (int argc, char ** argv)
             //In the parent
             mypid=getpid();
             close(*pipefd); // closing the read end of the pipe
-            fprintf(stdout,"I'm the parent, PID=%d, my_value=%d\n",mypid, my_value);
+            fprintf(stderr,"I'm the parent, PID=%d, my_value=%d\n",mypid, my_value);
             char message[256];
             sprintf(message,"Hi, I am your parent. My PID=%d and my_value=%d",mypid,my_value);
             int count=strlen(message);
             write(*(pipefd+1),message,count+1); // writing to the pipe
             wait(NULL); // waiting for the child;
-            fprintf(stdout,"CHILD TERMINATED\n");
+            fprintf(stderr,"CHILD TERMINATED\n");
             exit(EXIT_SUCCESS);
         }
     }
