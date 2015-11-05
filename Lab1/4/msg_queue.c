@@ -32,14 +32,14 @@ int main (int argc, char ** argv)
     
     //Setting initial attributes
     MQAttr.mq_flags = 0; 	// Blocking queue  
-    MQAttr.mq_maxmsg = 10;  
+    MQAttr.mq_maxmsg = 1;  
     MQAttr.mq_msgsize = MAX_MQ_BUFFER;  
     MQAttr.mq_curmsgs = 0;
 
 #define NAME "/DEEDS_lab1_mq"
 
     //Creating a MQ
-    msgQ = mq_open(NAME, O_CREAT, 0644, &MQAttr);
+    msgQ = mq_open(NAME, O_CREAT | O_WRONLY, 0644, &MQAttr);
 	if(msgQ==-1)
 		fprintf(stderr, "Failed to create Message Queue. Error : %s \n", strerror(errno));
 
@@ -73,6 +73,8 @@ int main (int argc, char ** argv)
             // Print the read data and free memory
             fprintf(stderr, "Data received : %s \n", buffer);
             free(buffer);
+            //closing MQ in Child
+            error_checker(0 <= mq_close(msgQ), "Child: Closing MQ");
             exit(EXIT_SUCCESS);
         }
         if(cpid>0)
@@ -87,16 +89,13 @@ int main (int argc, char ** argv)
             //parent: create, delete MQ (creation, deletion already done)
             // Open queue with WRITE access
             msgQ = mq_open(NAME, O_WRONLY);
-            error_checker(0 <= msgQ, "Opening MQ\n");
             //Writing to MQ
             error_checker(0 <= mq_send(msgQ, MQBuffer, sizeof(MQBuffer), 1), "Writing to MQ\n");
-            //Closing the MQ
-            error_checker(0 <= mq_close(msgQ), "Closing MQ\n");
             wait(NULL); // waiting for the child
             fprintf(stdout,"CHILD TERMINATED\n");
             //closing & deleting MQ
-            error_checker(0 <= mq_close(msgQ), "Closing MQ");
-            error_checker(0 <= mq_unlink(NAME), "Unlinking MQ");	
+            error_checker(0 <= mq_close(msgQ), "Parent: Closing MQ");
+            error_checker(0 <= mq_unlink(NAME), "Parent: Unlinking MQ");	
             exit(EXIT_SUCCESS);
         }
     }
