@@ -1,0 +1,3 @@
+5.1 - For instance you can have one scenario where the children executed first and it tries to read from shared memory before parent writes 
+in it, child will get random / undefined value. This is because there is no synchronization between child and parent.
+5.2 - Shared Memory is faster, have lower comunication overhead. Application can get benifit of hardware caching.
