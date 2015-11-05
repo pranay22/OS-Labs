@@ -90,8 +90,6 @@ int main (int argc, char ** argv)
             error_checker(0 <= msgQ, "Opening MQ\n");
             //Writing to MQ
             error_checker(0 <= mq_send(msgQ, MQBuffer, sizeof(MQBuffer), 1), "Writing to MQ\n");
-            //Closing the MQ
-            error_checker(0 <= mq_close(msgQ), "Closing MQ\n");
             wait(NULL); // waiting for the child
             fprintf(stderr, "CHILD TERMINATED\n");
             //closing & deleting MQ
