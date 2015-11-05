@@ -8,7 +8,7 @@ LDFLAGS= -lrt
 
 all: msg_queue
    
-sh-mem: msg_queue.c
+msg_queue: msg_queue.c
 	$(CC) $(CFLAGS) -o msg_queue msg_queue.c $(LDFLAGS)
 
 clean:

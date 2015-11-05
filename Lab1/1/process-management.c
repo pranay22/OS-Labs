@@ -18,7 +18,7 @@ int my_value = 42;
 int main(){
 	pid_t cPID ;
 	
-	fprintf(stderr, "This is parent. PID is: %d\n", getpid());
+	// fprintf(stderr, "This is parent. PID is: %d\n", getpid());
     
     if ((cPID=fork())<0) {
         fprintf(stderr, "Fork Error\n");
