@@ -1,0 +1,11 @@
+3.1 - The output is always the same except the values of PID change and my_value for parent is 42 and my_value for child is 18951. 
+The order is predefined and does not change because of the waiting time: after both parent and child sleep for 150 ms parent continues
+and writes in the pipe whereas the child sleeps for 500 ms and after that reads from the pipe. 
+
+3.2 - 
+Cons:
+- You need two pipes to achieve bidirectional communication.
+- It can be a challenge to synchronize threads and depending on the relation model between user-threads 
+and kernel-threads it might block the application.
+Pros:
+ - Multiple read-write is possible and also it can be inherited by the children.
