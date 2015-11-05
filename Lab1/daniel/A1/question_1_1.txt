@@ -1,0 +1,4 @@
+The output for my_value stays the same.
+Parent: 18951, Child: 42.
+Since the child process is a clone of the parent process with its own memory region they do not write to the same memory.
+Thus the behaviour is not surprising.

@@ -1,0 +1,6 @@
+Only the parent / child process identifiers change. my_value is always 42.
+Since we prepare the message in the parent the program behaves as expected.
+
+Pipes should behave the same since threads are light weight processes with a common parent process
+and messages are buffered in the kernel.
+TODO pro/con?

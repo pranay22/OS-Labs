@@ -1,0 +1,6 @@
+First of all parent and child process identifiers match. This is not surprising since both threads have a common parent process.
+
+The parent outputs different values for my_value before the child returns: either 42 or 18951.
+Afterwards the parent outputs 18951. (The child thread always outputs 18951.)
+
+TODO Reason?
