@@ -1,4 +1,0 @@
-The output stays the same without further synchronization meassures: only the parent message is printed.
-
-Shared memory objects use less memory and provide faster access but synchronization is mandatory.
-Message queues are slower (since the kernel is involved in buffering) but synchronization is unnecessary.
