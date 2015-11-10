@@ -6,4 +6,7 @@ Repository for OS Labs (WS 2015-16)
 
 1. Task 1.1: a. gcc -Wall -o [object file] [source code file]   b. ./[object file]  
 OR  
-2. Use makefile and just type 'make'
+2. Use makefile and just type 'make'  
+
+OR  
+for 100 times execution use mult_exec.sh  

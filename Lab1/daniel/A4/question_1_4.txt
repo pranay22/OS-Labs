@@ -1,3 +1,0 @@
-I could not observe any differences. Messages are as well buffered in the kernel.
-
-TODO: No need for a common parent process (?!) thus more flexible in general.
