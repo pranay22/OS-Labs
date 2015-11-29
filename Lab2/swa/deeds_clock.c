@@ -28,7 +28,6 @@ ssize_t read_deeds_clock(struct file *filep, char __user* buf, size_t length, lo
     if(temp>length)
         temp = length;
     copy_to_user(buf,msg,temp);
-    //copy_to_user(buf,"YOSh",4);
     if(var)
     {
         var =0;
