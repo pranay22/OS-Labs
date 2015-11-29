@@ -1,0 +1,1 @@
+cmd_/home/swallak/Documents/OS/OS-Labs/Lab2/swa/deeds_clock.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/swallak/Documents/OS/OS-Labs/Lab2/swa/deeds_clock.ko /home/swallak/Documents/OS/OS-Labs/Lab2/swa/deeds_clock.o /home/swallak/Documents/OS/OS-Labs/Lab2/swa/deeds_clock.mod.o
