@@ -24,12 +24,32 @@ ssize_t read_deeds_clock(struct file *filep, char __user* buf, size_t length, lo
 {
     struct timeval tv;
     char msg[128];
-    unsigned long long int current_time;
-    size_t temp;  
+    time_t current_time; //time_t is defined as a long int
+    struct tm ct; //for format 1
+    int adjust=sys_tz.tz_minuteswest; // to adjust time accoding to time zone
+    size_t temp;
     do_gettimeofday(&tv);
-    current_time = tv.tv_sec;
-    sprintf(msg,"current time: %llu\n",current_time);
-    printk(KERN_DEBUG "current time: %llu\n",current_time);//log
+    current_time = tv.tv_sec - 60*adjust;
+    switch (config_val)
+    {
+CASE_0:
+    case '0':
+            sprintf(msg,"current time: %li\n",current_time);
+            printk(KERN_DEBUG "current time: %li\n",current_time);
+            break;
+    case '1':
+            time_to_tm(current_time,0,&ct);
+            sprintf(msg,"current time:%4li-%2i-%2i  %2i:%2i:%2i\n",ct.tm_year+1900,ct.tm_mon+1,ct.tm_mday,ct.tm_hour,ct.tm_min,ct.tm_sec);
+            printk(KERN_DEBUG "current time %s\n",msg);
+            printk(KERN_DEBUG "system time zone: %i",sys_tz.tz_minuteswest);
+            break;
+    default :
+            goto CASE_0;
+            break;
+            //goto case '0';        
+    }
+   
+   
     temp = strlen(msg);
     if(temp>length)
         temp = length;
@@ -69,7 +89,25 @@ ssize_t read_config(struct file *filep, char __user* buf, size_t length, loff_t 
 
 ssize_t write_config(struct file * filep, const char __user * buf, size_t length, loff_t *offset)
 {
-    return 0;
+    char msg[2];
+    char c;
+    printk(KERN_DEBUG "writing to deeds_clock_config:%s\n",buf);
+    if(length==2)
+    {
+        copy_from_user(msg,buf,2);
+        c=msg[0];
+        if(c=='0'||c=='1')
+            {
+                config_val=c;
+                return length;
+            }
+        else
+            goto ERROR_CONFIG;
+    }
+
+ERROR_CONFIG:
+    printk(KERN_ERR "Invalid argument");
+    return -EINVAL;
 }
 
 struct file_operations dc_fops = {
@@ -85,7 +123,7 @@ static int __init init_deeds_clock(void)
     //Initialiting mode and proc_ops
     umode_t mode = 0444;//only read is allowed
     deeds_clock = proc_create("deeds_clock",mode,NULL,&dc_fops);
-    mode = 0644 ;//only superuser is allowed to write
+    mode = 0666 ;//only superuser is allowed to write
     config = proc_create("deeds_clock_config",mode,NULL,&config_fops);
     return 0;
 }
