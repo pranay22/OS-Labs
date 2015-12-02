@@ -5,7 +5,7 @@
 #include<linux/proc_fs.h>
 #include<linux/fs.h>
 #include<asm/uaccess.h>
-#include <asm-generic/errno-base.h> /*For errors*/
+#include <uapi/asm-generic/errno-base.h> /*For errors*/
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("DEEDS");
 
