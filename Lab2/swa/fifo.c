@@ -163,7 +163,7 @@ ssize_t config_write (struct file *filep, const char __user *buf, size_t length,
 	char msg [128]; // will contain buffer received from the user
 	int new_buffer_size;
 	int empty = (read_index==-1 ? 1 : 0);
-	printk(KERN_INFO "fifo_config-writing: %s\n", buf);
+	printk(KERN_INFO "fifo_config-writing:");
 	printk(KERN_INFO "length: %li\n", length);
 	if(!is_open &&  empty)
 	{
