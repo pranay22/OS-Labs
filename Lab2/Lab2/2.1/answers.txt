@@ -1,0 +1,4 @@
+2.1: If two processes try to change the buffer size the behaviour is undefined. It is not clear, which process gets to write the size and which one is blocked because the fifo is busy.
+If one process tries to write to the buffer and another tries to change the buffer size it depends on the scheduler. If the buffer-size-changing-process is scheduled first, the size is changed first and the write process is blocked. Otherwise the data is written to the buffer first and the size is changed afterwards.
+2.2: In use cases like IPC or ME with bounded buffers, multiple processes need to acces the fifo concurrently to work properly. So our fifo cannot be used for those use cases.
+2.3: Block and unblock must be added at the write function. The fifo must be blocked when it is full and unblocked, when there is space again to write.

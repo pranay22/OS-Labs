@@ -1,0 +1,2 @@
+1.1: The implementation behaves exactly as described: If a 1 is written to the config file it returns formatted output and if a 0 is written it provides unformatted system time.
+So if clock format is changed while the clock file is read, we don't know, if the new clock format is already used. It depends on the scheduler.
