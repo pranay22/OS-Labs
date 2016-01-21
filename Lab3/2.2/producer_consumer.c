@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <signal.h>
+
+static volatile int keepRunning = 1;
 
 void show_help(){
 	printf("How to use this program:\n");
@@ -48,10 +51,18 @@ static int parse_to_int (const char * msg)
 	return 0;
 }
 
+void intHandler(int dummy) {
+	keepRunning = 0;
+	printf("Program was cancelled\n");
+}
+
 /*
  * Required CLI-parameters: mode, name, rate, message
  */
 int main(int argc, char* argv[]){
+	
+	signal(SIGINT,intHandler);
+	
 	int isProducer = 0;
 	int isConsumer = 0;
 	char* name = NULL;
@@ -108,7 +119,7 @@ int main(int argc, char* argv[]){
 		rate = parse_to_int(rate_arg);
 		// TODO: Insert rate conversion and actual creation
 		unsigned int time_to_wait = 1000000/rate;
-		while(1){
+		while(keepRunning){
 			printf("Item produced\n");
 			usleep(time_to_wait);
 		}
@@ -125,7 +136,7 @@ int main(int argc, char* argv[]){
 		}
 		rate = parse_to_int(rate_arg);		
 		unsigned int time_to_wait = 1000000/rate;
-		while(1){
+		while(keepRunning){
 			printf("Item consumed\n");
 			usleep(time_to_wait);
 		}
