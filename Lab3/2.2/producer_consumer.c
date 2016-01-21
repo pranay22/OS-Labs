@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <time.h>
 
 void show_help(){
 	printf("How to use this program:\n");
@@ -14,13 +16,47 @@ void show_help(){
 }
 
 /*
+* Parse a string to integer
+*/
+static int parse_to_int (const char * msg)
+{
+	unsigned int val = 0;
+	unsigned int ten=1; 
+	int i;
+	unsigned int length;
+	if(msg!=NULL)
+	{
+		length = strlen(msg);
+		for(i=length-1; i>-1; i--)
+		{
+			if(msg[i]<='9' && msg[i]>='0')
+			{
+				val += ((int)msg[i]-'0')*ten;
+				ten*=10;
+			}
+			else
+			{
+				val = -1;
+				break;
+			}
+		}
+		if(val>=0)
+			return val;
+		else
+			return 0;
+	}
+	return 0;
+}
+
+/*
  * Required CLI-parameters: mode, name, rate, message
  */
 int main(int argc, char* argv[]){
 	int isProducer = 0;
 	int isConsumer = 0;
 	char* name = NULL;
-	char* rate = NULL;
+	char* rate_arg = NULL;
+	int rate = 0;
 	char* message = NULL;
 	int c;	
 	while ((c = getopt(argc, argv, "hpcn:r:m:")) != -1){
@@ -38,7 +74,7 @@ int main(int argc, char* argv[]){
 				name = optarg;
 				break;
 			case 'r':
-				rate = optarg;
+				rate_arg = optarg;
 				break;
 			case 'm':
 				message = optarg;
@@ -65,12 +101,17 @@ int main(int argc, char* argv[]){
 			fprintf(stderr, "Message missing. I can't work like this!\n");
 			return 1;
 		}
-		if (rate == NULL){
+		if (rate_arg == NULL){
 			fprintf(stderr, "Rate missing. I can't work like this!\n");
 			return 1;
 		}
+		rate = parse_to_int(rate_arg);
 		// TODO: Insert rate conversion and actual creation
-		printf("Producer %s with a production rate of %s and message %s created.\n", name, rate, message);
+		unsigned int time_to_wait = 1000000/rate;
+		while(1){
+			printf("Item produced\n");
+			usleep(time_to_wait);
+		}
 		return 0;
 	}
 	else if (isConsumer){
@@ -78,12 +119,16 @@ int main(int argc, char* argv[]){
 			fprintf(stderr, "Name missing. I can't work like this!\n");
 			return 1;
 		}
-		if (rate == NULL){
+		if (rate_arg == NULL){
 			fprintf(stderr, "Rate missing. I can't work like this!\n");
 			return 1;
-		}		
-		//TODO: Insert rate conversion and actual creation
-		printf("Consumer %s with a consumption rate of %s created.\n", name, rate);
+		}
+		rate = parse_to_int(rate_arg);		
+		unsigned int time_to_wait = 1000000/rate;
+		while(1){
+			printf("Item consumed\n");
+			usleep(time_to_wait);
+		}
 		return 0;
 	}
 	else{
