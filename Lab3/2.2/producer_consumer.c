@@ -7,8 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include <signal.h>
-
-static volatile int keepRunning = 1;
+#include <semaphore.h>
 
 void show_help(){
 	printf("How to use this program:\n");
@@ -52,8 +51,8 @@ static int parse_to_int (const char * msg)
 }
 
 void intHandler(int dummy) {
-	keepRunning = 0;
 	printf("Program was cancelled\n");
+	exit(EXIT_SUCCESS);
 }
 
 /*
@@ -117,10 +116,10 @@ int main(int argc, char* argv[]){
 			return 1;
 		}
 		rate = parse_to_int(rate_arg);
-		// TODO: Insert rate conversion and actual creation
 		unsigned int time_to_wait = 1000000/rate;
-		while(keepRunning){
+		while(1){
 			printf("Item produced\n");
+			//TODO: Implement actual FIFO methods			
 			usleep(time_to_wait);
 		}
 		return 0;
@@ -136,8 +135,9 @@ int main(int argc, char* argv[]){
 		}
 		rate = parse_to_int(rate_arg);		
 		unsigned int time_to_wait = 1000000/rate;
-		while(keepRunning){
+		while(1){
 			printf("Item consumed\n");
+			//TODO: Implement actual FIFO methods			
 			usleep(time_to_wait);
 		}
 		return 0;
