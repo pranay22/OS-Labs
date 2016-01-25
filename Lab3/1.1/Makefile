@@ -1,5 +1,5 @@
-#obj-m := deeds_clock.o fifo.o
 obj-m := fifo.o
+#ccflags-y := -I.
 PWD :=  $(shell pwd)
 KDIR := $(shell uname -r)
 SHELL := /bin/bash
