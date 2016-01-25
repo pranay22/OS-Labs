@@ -9,6 +9,7 @@
 #include<linux/moduleparam.h> // for module param
 #include<linux/workqueue.h>
 #include<linux/time.h>
+#include<asm/uaccess.h>
 #include "fifo.h"
 
 MODULE_AUTHOR("DEEDS");
@@ -42,7 +43,7 @@ static unsigned int writers; // current number of writers
 static unsigned int total_writes; //Total writes
 static unsigned int total_reads; // Total reads 
 
-int write (struct data_item data)
+unsigned int kwrite (struct data_item data)
 {
     struct timeval* tv=NULL;
     do_gettimeofday(tv);
@@ -75,7 +76,7 @@ int write (struct data_item data)
     
     return qid; //returns the value of next qid
 }
-struct data_item read (void)
+struct data_item kread (void)
 {
     struct data_item data;
     
@@ -108,7 +109,64 @@ ssize_t fifo_read (struct file *filep, char __user *buff, size_t len, loff_t *of
 
 ssize_t fifo_write (struct file *filep, char const __user *buff, size_t len, loff_t *offset)
 {
-    return 0;
+    char *copy = (char*) kmalloc(len*sizeof(char),GFP_KERNEL);
+    if(!copy)
+    {
+        printk(KERN_ERR "Mem allocation for copy buffer failed");
+        kfree(copy);
+        return -ENOMEM;
+    }
+    unsigned int result = copy_from_user(copy,buff,len);
+    if(result != 0)
+    {
+        printk(KERN_ERR "User's buffer copy failed");
+        kfree(copy);
+        return -EPERM;
+    }
+    /*Parsing through the user's buffer*/
+    int i = 0;
+    int comma1=-1;
+    int comma2=-1;
+    struct data_item data;
+    data.qid = 0;
+    data.time = 0;
+    
+    for(i=0;i<len && copy[i]!=',' && copy[i]<='9' && copy[i]>='0'; i++);
+    if(copy[i]!=',')
+    {
+        kfree(copy);
+        return -EINVAL;
+    }
+        
+    comma1=i;
+    for (i=comma1+1; i<len && copy[i]!=',' && copy[i]<='9' && copy[i]>='0';i++);
+    if(copy[i]!=',' || i == len)
+    {
+        kfree(copy);
+        return -EINVAL;
+    }
+    comma2=i;
+    
+    //calcutating the qid
+    for(i=0; i<comma1; i++)
+        data.qid = data.qid *10 + (int)(copy[i]-'0');
+    //Calculating the time
+    for(i=comma1+1; i<comma2; i++)
+        data.time = data.time *10 + (int)(copy[i]-'0');
+    //copying the msg value
+    data.msg = (char*) kmalloc((len-comma2-1)*sizeof(char),GFP_KERNEL);
+    if(!data.msg)
+    {
+        printk(KERN_ERR "Memory allocation for data.msg failed");
+        kfree(copy);
+        kfree(data.msg);
+        return -ENOMEM;
+    }
+    for(i=comma2+1; i<len; i++)
+        data.msg[i-comma2-1]=copy[i];
+        
+    return kwrite(data);
+    
 }
 
 
@@ -146,14 +204,25 @@ static int __init fifo_init(void)
         printk(KERN_ERR "Registring device failed");
         return -EPERM;
     }
-    /*Declaring the workqueue*/
-    wq = alloc_workqueue (WORK_QUEUE,WQ_UNBOUND,1);
+    printk(KERN_INFO "Major number for fifo: %d",major);
+    // /*Declaring the workqueue*/
+    // wq = alloc_workqueue (WORK_QUEUE,WQ_UNBOUND,1);
+    // if(!wq)
+    // {
+    //     printk(KERN_ERR "Work queue error");
+    //     return -EPERM;
+    // }
     return 0;
 }
 
 static void __exit fifo_exit(void)
 {
+    kfree(buffer);
     return;
 }
 module_init(fifo_init);
 module_exit(fifo_exit);
+//Interface export
+EXPORT_SYMBOL(kwrite);
+EXPORT_SYMBOL(kread);
+
