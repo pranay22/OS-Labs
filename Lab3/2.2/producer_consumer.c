@@ -8,12 +8,13 @@
 #include <time.h>
 #include <signal.h>
 #include <semaphore.h>
+#include "fifo.h"
 
 void show_help(){
 	printf("How to use this program:\n");
 	printf("Consumer mode: Add parameters for mode, name, consumption rate and file to access.\n");
 	printf("Example: prodCon -c -nExample -r1000 -l~/example\n\n");
-	printf("Producer mode: Add parameters for mode, name, message and consumption rate.\n");
+	printf("Producer mode: Add parameters for mode, name, message consumption rate and file to access.\n");
 	printf("Example: prodCon -p -nExample -r1000 -mExampleMessage -l~/example\n");
 }
 
@@ -50,9 +51,17 @@ static int parse_to_int (const char * msg)
 	return 0;
 }
 
+unsigned long long get_time(){
+	return time(0);
+}
+
 void intHandler(int dummy) {
 	printf("Program was cancelled\n");
 	exit(EXIT_SUCCESS);
+}
+
+void write_to_file(FILE* file, struct data_item* item){
+	if (file != NULL) fprintf(file, "%d,%llu,%s\n", item->qid, item->time, item->msg);
 }
 
 /*
@@ -70,7 +79,7 @@ int main(int argc, char* argv[]){
 	char* message = NULL;
 	char* path = NULL;
 	int c;	
-	while ((c = getopt(argc, argv, "hpcn:r:m:")) != -1){
+	while ((c = getopt(argc, argv, "hpcn:r:m:l:")) != -1){
 		switch(c){
 			case 'h':
 				show_help();
@@ -122,9 +131,17 @@ int main(int argc, char* argv[]){
 		rate = parse_to_int(rate_arg);
 		unsigned int time_to_wait = 1000000/rate;
 		while(1){
-			printf("Item produced\n");
-			//TODO: Implement actual FIFO methods			
-			usleep(time_to_wait);
+			FILE *file = fopen(path,"a");	
+			if (file == NULL){
+				fprintf (stderr, "File could not be opened!\n");
+				return EXIT_FAILURE;
+			}
+			else{			
+				struct data_item item = {.msg=message, .time=get_time()};
+				write_to_file(file, &item);
+				fclose(file);
+				usleep(time_to_wait);
+			}
 		}
 		return 0;
 	}
