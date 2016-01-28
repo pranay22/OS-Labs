@@ -63,7 +63,7 @@ void write_to_file(FILE* file, struct data_item* item){
 	if (file != NULL) fprintf(file, "%d,%llu,%s\n", item->qid, item->time, item->msg);
 	else{
 		fprintf (stderr, "File could not be opened!\n");
-		return EXIT_FAILURE;
+		exit( EXIT_FAILURE);
 	}
 }
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]){
 	char* rate_arg = NULL;
 	int rate = 0;
 	char* message = NULL;
-	char* path = NULL;
+	char* path = "/dev/deeds_fifo";
 	int c;	
 	while ((c = getopt(argc, argv, "hpcn:r:m:l:")) != -1){
 		switch(c){
