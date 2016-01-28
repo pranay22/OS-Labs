@@ -13,14 +13,14 @@
 void show_help(){
 	printf("How to use this program:\n");
 	printf("Consumer mode: Add parameters for mode, name, consumption rate and file to access.\n");
-	printf("Example: prodCon -c -nExample -r1000 -l~/example\n\n");
-	printf("Producer mode: Add parameters for mode, name, message consumption rate and file to access.\n");
-	printf("Example: prodCon -p -nExample -r1000 -mExampleMessage -l~/example\n");
+	printf("Example: producer-consumer -c -nExample -r1000 -l~/example\n\n");
+	printf("Producer mode: Add parameters for mode, name, message, consumption rate and file to access.\n");
+	printf("Example: producer-consumer -p -nExample -r1000 -mExampleMessage -l~/example\n");
 }
 
 /*
-* Parse a string to integer
-*/
+ * Parse a string to integer
+ */
 static int parse_to_int (const char * msg)
 {
 	unsigned int val = 0;
@@ -51,21 +51,24 @@ static int parse_to_int (const char * msg)
 	return 0;
 }
 
-unsigned long long get_time(){
-	return time(0);
-}
-
 void intHandler(int dummy) {
 	printf("Program was cancelled\n");
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Encapsules the code that writes a data item to a file
+ */
 void write_to_file(FILE* file, struct data_item* item){
 	if (file != NULL) fprintf(file, "%d,%llu,%s\n", item->qid, item->time, item->msg);
+	else{
+		fprintf (stderr, "File could not be opened!\n");
+		return EXIT_FAILURE;
+	}
 }
 
 /*
- * Required CLI-parameters: mode, name, rate, message
+ * Required CLI-parameters: mode, name, rate, message, path
  */
 int main(int argc, char* argv[]){
 	
@@ -104,7 +107,7 @@ int main(int argc, char* argv[]){
 				break;
 			case '?':
 				fprintf(stderr, "Unknown option: %c\n", optopt);
-				return 1;
+				return EXIT_FAILURE;
 			default:
 				abort();
 		}
@@ -112,50 +115,54 @@ int main(int argc, char* argv[]){
 
 	/* Evaluation of options*/
 	if (isProducer && isConsumer){
-		fprintf(stderr, "I can't be producer and consumer at the same time, moron!\n");
-		return 1;
+		fprintf(stderr, "I can't be producer and consumer at the same time!\n");
+		return EXIT_FAILURE;
 	}
-	if (isProducer){
+	if (isProducer){	//We've got a producer
 		if (name == NULL){
 			fprintf(stderr, "Name missing. I can't work like this!\n");
-			return 1;
+			return EXIT_FAILURE;
 		}
 		if (message == NULL){
 			fprintf(stderr, "Message missing. I can't work like this!\n");
-			return 1;
+			return EXIT_FAILURE;
 		}
 		if (rate_arg == NULL){
 			fprintf(stderr, "Rate missing. I can't work like this!\n");
-			return 1;
+			return EXIT_FAILURE;
+		}
+		if (path == NULL){
+			fprintf(stderr, "Path missing. I can't work like this!\n");
+			return EXIT_FAILURE;
 		}
 		rate = parse_to_int(rate_arg);
 		unsigned int time_to_wait = 1000000/rate;
+		//In this loop the actual production of items is done.
 		while(1){
-			FILE *file = fopen(path,"a");	
-			if (file == NULL){
-				fprintf (stderr, "File could not be opened!\n");
-				return EXIT_FAILURE;
-			}
-			else{			
-				struct data_item item = {.msg=message, .time=get_time()};
-				write_to_file(file, &item);
-				fclose(file);
-				usleep(time_to_wait);
-			}
+			FILE *file = fopen(path,"a");
+			struct data_item item = {.msg=message, .time=time(0)};
+			write_to_file(file, &item);
+			fclose(file);
+			usleep(time_to_wait);
 		}
 		return 0;
 	}
-	else if (isConsumer){
+	else if (isConsumer){	//We've got a consumer
 		if (name == NULL){
 			fprintf(stderr, "Name missing. I can't work like this!\n");
-			return 1;
+			return EXIT_FAILURE;
 		}
 		if (rate_arg == NULL){
 			fprintf(stderr, "Rate missing. I can't work like this!\n");
-			return 1;
+			return EXIT_FAILURE;
+		}
+		if (path == NULL){
+			fprintf(stderr, "Path missing. I can't work like this!\n");
+			return EXIT_FAILURE;
 		}
 		rate = parse_to_int(rate_arg);		
 		unsigned int time_to_wait = 1000000/rate;
+		//In this loop the actual consumption of items is done.
 		while(1){
 			printf("Item consumed\n");
 			//TODO: Implement actual FIFO methods			
@@ -164,8 +171,8 @@ int main(int argc, char* argv[]){
 		return 0;
 	}
 	else{
-		fprintf(stderr, "I must be either consumer or producer you twerp!\n");
-		return 1;
+		fprintf(stderr, "I must be either consumer or producer!\n");
+		return EXIT_FAILURE;
 	}
 
 }
