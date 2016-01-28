@@ -11,10 +11,10 @@
 
 void show_help(){
 	printf("How to use this program:\n");
-	printf("Consumer mode: Add parameters for mode, name and consumption rate.\n");
-	printf("Example: prodCon -c -nExample -r1000\n\n");
+	printf("Consumer mode: Add parameters for mode, name, consumption rate and file to access.\n");
+	printf("Example: prodCon -c -nExample -r1000 -l~/example\n\n");
 	printf("Producer mode: Add parameters for mode, name, message and consumption rate.\n");
-	printf("Example: prodCon -p -nExample -r1000 -mExampleMessage\n");
+	printf("Example: prodCon -p -nExample -r1000 -mExampleMessage -l~/example\n");
 }
 
 /*
@@ -68,6 +68,7 @@ int main(int argc, char* argv[]){
 	char* rate_arg = NULL;
 	int rate = 0;
 	char* message = NULL;
+	char* path = NULL;
 	int c;	
 	while ((c = getopt(argc, argv, "hpcn:r:m:")) != -1){
 		switch(c){
@@ -88,6 +89,9 @@ int main(int argc, char* argv[]){
 				break;
 			case 'm':
 				message = optarg;
+				break;
+			case 'l':
+				path = optarg;
 				break;
 			case '?':
 				fprintf(stderr, "Unknown option: %c\n", optopt);
