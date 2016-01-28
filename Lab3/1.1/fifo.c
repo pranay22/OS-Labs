@@ -131,6 +131,8 @@ ssize_t fifo_write (struct file *filep, char const __user *buff, size_t len, lof
     data.qid = 0;
     data.time = 0;
     
+    printk(KERN_DEBUG "Parsing");
+    
     for(i=0;i<len && copy[i]!=',' && copy[i]<='9' && copy[i]>='0'; i++);
     if(copy[i]!=',')
     {
@@ -164,6 +166,8 @@ ssize_t fifo_write (struct file *filep, char const __user *buff, size_t len, lof
     }
     for(i=comma2+1; i<len; i++)
         data.msg[i-comma2-1]=copy[i];
+        
+    printk(KERN_INFO "data.qid=%u, data.time=%lu, data.msg=%s", data.qid, data.time, data.msg);
         
     return kwrite(data);
     
