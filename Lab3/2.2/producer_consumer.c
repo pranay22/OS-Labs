@@ -1,5 +1,5 @@
 /* Getopt-code "inspired" by: https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html#Example-of-Getopt*/
-
+#define _GNU_SOURCE
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,9 +21,42 @@ void show_help(){
 /*
  * Parse a string to integer
  */
-static int parse_to_int (const char * msg)
+static unsigned int parse_to_int (const char * msg)
 {
 	unsigned int val = 0;
+	unsigned int ten=1; 
+	int i;
+	unsigned int length;
+	if(msg!=NULL)
+	{
+		length = strlen(msg);
+		for(i=length-1; i>-1; i--)
+		{
+			if(msg[i]<='9' && msg[i]>='0')
+			{
+				val += ((int)msg[i]-'0')*ten;
+				ten*=10;
+			}
+			else
+			{
+				val = -1;
+				break;
+			}
+		}
+		if(val>=0)
+			return val;
+		else
+			return 0;
+	}
+	return 0;
+}
+
+/*
+ * Parse a string to integer
+ */
+static unsigned long long parse_to_llu (const char * msg)
+{
+	unsigned long long val = 0;
 	unsigned int ten=1; 
 	int i;
 	unsigned int length;
@@ -64,6 +97,37 @@ void write_to_file(FILE* file, struct data_item* item){
 	else{
 		fprintf (stderr, "File could not be opened!\n");
 		exit( EXIT_FAILURE);
+	}
+}
+
+struct data_item* read_from_file(FILE* file){
+	if (file == NULL){
+		fprintf(stderr, "File could not be opened!\n");
+		exit (EXIT_FAILURE);
+	}
+	else{
+		unsigned int qid = 0;
+		unsigned long long time = 0;
+		const char* separator = ",";
+		char* text = malloc(128);
+		char* msg;
+		
+		fscanf(file, "%s", text);
+		struct data_item* item = malloc(sizeof(struct data_item));
+		char* token = strtok(text,separator);
+		int tokenCounter = 0;
+		while(token != NULL){
+			if (tokenCounter == 0) qid = parse_to_int(token);
+			else if (tokenCounter == 1) time = parse_to_llu(token);
+			else if (tokenCounter == 2) asprintf(&msg, "%s", token);
+			token = strtok(NULL, separator);
+			tokenCounter++;
+		}
+		item->qid = qid;
+		item->time = time;
+		item->msg = msg;
+		free(text);
+		return item;
 	}
 }
 
@@ -165,7 +229,11 @@ int main(int argc, char* argv[]){
 		//In this loop the actual consumption of items is done.
 		while(1){
 			printf("Item consumed\n");
-			//TODO: Implement actual FIFO methods			
+			FILE* file = fopen(path, "r");
+			struct data_item* item = read_from_file(file);
+			printf("Read item no. %d, produced at %llu, with message '%s'\n", item->qid, item->time, item->msg);	
+			free(item->msg);		
+			free(item);
 			usleep(time_to_wait);
 		}
 		return 0;
