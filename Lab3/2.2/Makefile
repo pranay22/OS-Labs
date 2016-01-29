@@ -1,7 +1,7 @@
 #Makefile for compiing & executing the program
 #OS-Labs at Technische Universität Darmstadt
 
-CFLAG= -Wall -std=gnu99
+CFLAG= -Wall -std=gnu99 -I../1.1
 CC=gcc
 RM= rm -f 
 
