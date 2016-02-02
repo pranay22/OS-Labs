@@ -125,13 +125,19 @@ ssize_t dev_read (struct file *filep, char __user *buff, size_t len, loff_t *off
         return 0;
     }
     else{
-        
+
         data = kread();
         msg = (char*)kmalloc(strlen(data.msg)+minSize(data.qid)+minSize(data.time)+10,GFP_KERNEL);
         sprintf(msg,"%u,%llu,%s",data.qid,data.time,data.msg);
         printk(KERN_CRIT "Read:%s\n",msg);
         if(down_interruptible(&users_mutex))
             return -ERESTARTSYS;
+        if(msg == NULL)
+        {
+            printk(KERN_ERR "Read failed");
+            up(&users_mutex);
+            return -ENOMEM;
+        }
         user_reads++;
         len = strlen(msg);
         copy_to_user(buff,msg,len);
@@ -307,4 +313,3 @@ module_exit(fifo_exit);
 //Interface export
 EXPORT_SYMBOL(kwrite);
 EXPORT_SYMBOL(kread);
-

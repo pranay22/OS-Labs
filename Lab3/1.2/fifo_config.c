@@ -10,6 +10,7 @@
 #include<linux/workqueue.h>
 #include<linux/time.h>
 #include<asm/uaccess.h>
+#include<linux/proc_fs.h>
 #include "fifo.h"
 
 MODULE_AUTHOR("DEEDS");
@@ -28,11 +29,16 @@ static struct semaphore full_sema;
 static struct semaphore empty_sema;
 static struct semaphore mutex;
 static struct semaphore writers_mutex;
-static struct semaphore readers_mutex;
-static struct semaphore accesses_mutex;
+static struct semaphore readers_mutex; 
+static struct semaphore current_accesses_mutex; //Mutex to protect operations on number of user accesses
+static struct semaphore users_mutex;  //Mutex used by user dev_read;
+static struct semaphore proc_mutex;
 
 static struct data_item* buffer = NULL;
 static struct workqueue_struct* wq = NULL;
+static struct proc_dir_entry*  procdir = NULL;
+static unsigned int proc_control=1;
+static unsigned int access_control = 1;
 static unsigned int read_index =0;
 static unsigned int write_index = 0;
 static unsigned int qid = 0;
@@ -44,8 +50,9 @@ static unsigned int readers; // current number of readers
 static unsigned int writers; // current number of writers
 static unsigned int total_writes; //Total writes
 static unsigned int total_reads; // Total reads 
-static unsigned int current_accesses; // current accesses
-
+static unsigned int current_accesses; // current accesses user_level
+static unsigned int user_reads=0;
+static unsigned int user_writes=0;
 unsigned int kwrite (struct data_item data)
 {
   
@@ -113,14 +120,35 @@ unsigned int minSize (unsigned int num)
 
 ssize_t dev_read (struct file *filep, char __user *buff, size_t len, loff_t *offset)
 {
-    struct data_item data = kread();
-    char * msg = (char*)kmalloc(strlen(data.msg)+minSize(data.qid)+minSize(data.time)+10,GFP_KERNEL);
-    printk(KERN_CRIT "Read: qid=%d,time=%llu,msg=%s",data.qid,data.time,data.msg);
-    
-    sprintf(msg,"%u,%llu,%s",data.qid,data.time,data.msg);
-    len = strlen(msg);
-    copy_to_user(buff,msg,len);
-    return len;
+    struct data_item data;
+    char * msg;
+    if(!access_control)
+    {
+        access_control++;
+        up(&users_mutex);
+        return 0;
+    }
+    else{
+
+        data = kread();
+        msg = (char*)kmalloc(strlen(data.msg)+minSize(data.qid)+minSize(data.time)+10,GFP_KERNEL);
+        sprintf(msg,"%u,%llu,%s",data.qid,data.time,data.msg);
+        printk(KERN_CRIT "Read:%s\n",msg);
+        if(down_interruptible(&users_mutex))
+            return -ERESTARTSYS;
+        if(msg == NULL)
+        {
+            printk(KERN_ERR "Read failed");
+            up(&users_mutex);
+            return -ENOMEM;
+        }
+        user_reads++;
+        len = strlen(msg);
+        copy_to_user(buff,msg,len);
+        access_control--;
+        return len;       
+    }
+    return 0;
 }
 
 struct data_item parse(char * user_msg, size_t len)
@@ -150,8 +178,8 @@ struct data_item parse(char * user_msg, size_t len)
     for(i=comma1+1; i<comma2; i++)
         data.time = data.time*10+(int)user_msg[i]-'0';
         
-    data.msg = kmalloc(len-comma2-1, GFP_KERNEL);
-    for(i=0; i<len-comma2-2; i++)
+    data.msg = kmalloc(len-comma2, GFP_KERNEL);
+    for(i=0; i<len-comma2-1; i++)
         data.msg[i]=user_msg[comma2+1+i];
     data.msg[i]='\0';
     return data;
@@ -160,6 +188,7 @@ struct data_item parse(char * user_msg, size_t len)
 
 ssize_t dev_write (struct file *filep, char const __user *buff, size_t len, loff_t *offset)
 {
+
     char * copy =  (char*) kmalloc(len*sizeof(char),GFP_KERNEL);
     struct data_item data;
     struct timeval tv;
@@ -182,6 +211,7 @@ ssize_t dev_write (struct file *filep, char const __user *buff, size_t len, loff
     }
     printk(KERN_CRIT "Write:qid=%d,time=%llu,msg=%s\n",data.qid,data.time,data.msg);
     
+    user_writes++;
     kwrite(data);
        
     return len;    
@@ -189,20 +219,19 @@ ssize_t dev_write (struct file *filep, char const __user *buff, size_t len, loff
 
 int dev_open (struct inode * inode, struct file * filep){
     
-    if(down_interruptible(&accesses_mutex))
+    if(down_interruptible(&current_accesses_mutex))
         return -ERESTARTSYS;
     
     current_accesses++;
-    up(&accesses_mutex);  
+    up(&current_accesses_mutex);  
     return 0;
 }
 int dev_release (struct inode *inode, struct file * filep){
     
-    if(down_interruptible(&accesses_mutex))
-        return -ERESTARTSYS;
-    
+    if(down_interruptible(&current_accesses_mutex))
+         return -ERESTARTSYS;
     current_accesses--;
-                up(&accesses_mutex);  
+    up(&current_accesses_mutex);  
      return 0;
 }
 
@@ -211,6 +240,55 @@ static struct file_operations fifo_ops = {
     .write = dev_write,
     .open = dev_open,
     .release = dev_release
+};
+
+ssize_t proc_read (struct file *filep, char __user *buff, size_t len, loff_t *offset){
+    long int empty=-1;
+    long int insertions=-1;
+    long int removals =-1;
+    long int sequence = -1;
+    long int accesses = -1;
+    long int stored = -1;
+    if(!proc_control)
+    {
+        proc_control++;
+        up(&proc_mutex);
+        return 0;
+    }
+    else
+    {
+        char msg [512];
+        
+        if(down_interruptible(&mutex))
+            return -ERESTARTSYS;
+
+        if(write_index<read_index)
+            empty = (long int) read_index-write_index;
+        else
+            empty = (long int) size -write_index+read_index+1;
+        insertions = total_writes;
+        removals = total_reads;
+        sequence = qid;
+        
+        up(&mutex);
+        
+        if(down_interruptible(&current_accesses_mutex))
+            return -ERESTARTSYS;
+        accesses = current_accesses;
+        up(&current_accesses_mutex);
+        stored = size -empty;
+        
+        sprintf(msg,"Current Fill:\nStored item=%ld, empty places=%ld, fill(percentage)=%ld\nTotal:\ninsertions=%ld, removals=%ld\nSequence number:%ld\nCurrent accesses=%ld\n",stored,empty,stored/size,insertions,removals,sequence,accesses);
+        if(down_interruptible(&proc_mutex))
+            return -ERESTARTSYS;
+        copy_to_user(buff,msg,strlen(msg));
+        proc_control++;
+        return strlen(msg);
+    }
+}
+
+static struct file_operations procops = {
+    .read = proc_read
 };
 
 static int __init fifo_init(void)
@@ -236,7 +314,9 @@ static int __init fifo_init(void)
     sema_init(&readers_mutex,1);
     sema_init(&empty_sema,0);
     sema_init(&full_sema,size);
-    sema_init(&accesses_mutex,1);
+    sema_init(&current_accesses_mutex,1);
+    sema_init(&users_mutex,1);
+    sema_init(&proc_mutex,1);
     /*Intialiting statistic variable*/
     writers=0;
     readers=0;
@@ -256,7 +336,8 @@ static int __init fifo_init(void)
     wq = alloc_workqueue("deeds_fifo",WQ_UNBOUND,1);
     if(wq == NULL)
         return -EPERM;
-    
+    printk(KERN_CRIT "Creating proc entry\n");
+    procdir = proc_create("deeds_fifo_stats",444,NULL,&procops);
     
     return 0;
 }
@@ -278,7 +359,9 @@ static void __exit fifo_exit(void)
     kfree(buffer);
     printk(KERN_CRIT "Unregistering the driver\n");
     unregister_chrdev(major, FIFO_DEV_NAME);
-    printk(KERN_CRIT "Module fifo exited successfully");
+    printk(KERN_CRIT "Removing proc entry\n");
+    proc_remove(procdir);
+    printk(KERN_CRIT "Module fifo exited successfully\n");
     return;
 }
 
@@ -287,4 +370,3 @@ module_exit(fifo_exit);
 //Interface export
 EXPORT_SYMBOL(kwrite);
 EXPORT_SYMBOL(kread);
-
