@@ -168,8 +168,8 @@ struct data_item parse(char * user_msg, size_t len)
     for(i=comma1+1; i<comma2; i++)
         data.time = data.time*10+(int)user_msg[i]-'0';
         
-    data.msg = kmalloc(len-comma2-1, GFP_KERNEL);
-    for(i=0; i<len-comma2-2; i++)
+    data.msg = kmalloc(len-comma2, GFP_KERNEL);
+    for(i=0; i<len-comma2-1; i++)
         data.msg[i]=user_msg[comma2+1+i];
     data.msg[i]='\0';
     return data;
