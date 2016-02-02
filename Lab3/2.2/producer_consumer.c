@@ -111,23 +111,30 @@ struct data_item* read_from_file(FILE* file){
 		const char* separator = ",";
 		char* text = malloc(128);
 		char* msg;
-		
-		fscanf(file, "%s", text);
-		struct data_item* item = malloc(sizeof(struct data_item));
-		char* token = strtok(text,separator);
+		int i;
+		int loopCounter = 0;
 		int tokenCounter = 0;
-		while(token != NULL){
-			if (tokenCounter == 0) qid = parse_to_int(token);
-			else if (tokenCounter == 1) time = parse_to_llu(token);
-			else if (tokenCounter == 2) asprintf(&msg, "%s", token);
-			token = strtok(NULL, separator);
-			tokenCounter++;
+		struct data_item* item;
+		while ((tokenCounter != 3) & (loopCounter < 2)){		
+			for (i = 0; i < 128; i++) text[i] = 0; 		
+			fscanf(file, "%s", text);
+			item = malloc(sizeof(struct data_item));
+			char* token = strtok(text,separator);		
+			while(token != NULL){
+				if (tokenCounter == 0) qid = parse_to_int(token);
+				else if (tokenCounter == 1) time = parse_to_llu(token);
+				else if (tokenCounter == 2) asprintf(&msg, "%s", token);
+				token = strtok(NULL, separator);
+				tokenCounter++;
+			}
+			loopCounter++;
 		}
+		free(text);
 		item->qid = qid;
 		item->time = time;
 		item->msg = msg;
-		free(text);
 		return item;
+		
 	}
 }
 
@@ -205,6 +212,7 @@ int main(int argc, char* argv[]){
 		while(1){
 			FILE *file = fopen(path,"a");
 			struct data_item item = {.msg=message, .time=time(0)};
+			printf("Produced item at %llu, with message '%s'\n", item.time, item.msg);
 			write_to_file(file, &item);
 			fclose(file);
 			usleep(time_to_wait);
@@ -228,9 +236,11 @@ int main(int argc, char* argv[]){
 		unsigned int time_to_wait = 1000000/rate;
 		//In this loop the actual consumption of items is done.
 		while(1){
-			printf("Item consumed\n");
 			FILE* file = fopen(path, "r");
-			struct data_item* item = read_from_file(file);
+			struct data_item* item = NULL;
+			while (item == NULL){
+				item = read_from_file(file);			
+			}
 			printf("Read item no. %d, produced at %llu, with message '%s'\n", item->qid, item->time, item->msg);	
 			free(item->msg);		
 			free(item);
