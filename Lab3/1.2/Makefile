@@ -1,4 +1,4 @@
-obj-m := fifo.o
+obj-m := fifo_config.o
 #ccflags-y := -I.
 PWD :=  $(shell pwd)
 KDIR := $(shell uname -r)
@@ -10,3 +10,12 @@ default:
 	
 clean:
 	make -C /lib/modules/$(KDIR)/build M=$(PWD) clean
+	
+load:
+	sudo dmesg --clear;\
+	sudo insmod fifo_config.ko major=240 ;\
+	sudo mknod /dev/deeds_fifo --mode=666 c 240 0;\
+
+remove:
+	sudo rmmod fifo_config;\
+	sudo rm /dev/deeds_fifo

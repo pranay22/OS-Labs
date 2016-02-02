@@ -296,6 +296,7 @@ static struct file_operations procops = {
 static int __init fifo_init(void)
 {
     int i = 0;
+	int reg = 0;
     printk(KERN_CRIT "Buffer size:%d\n",size);
     buffer = (struct data_item*) kmalloc(size*sizeof(struct data_item), GFP_KERNEL);
     //Initializing the buffer
@@ -326,9 +327,8 @@ static int __init fifo_init(void)
     total_reads=0;
     current_accesses=0;
     /*Registing a dev driver for user-space interface*/
-    if(major == 0)
-        major = register_chrdev(major,FIFO_DEV_NAME,&fifo_ops);
-    if(major<0)
+    reg = register_chrdev(major,FIFO_DEV_NAME,&fifo_ops);
+    if(reg)
     {
         printk(KERN_ERR "Registring device failed\n");
         return -EPERM;
@@ -350,6 +350,7 @@ static void __exit fifo_exit(void)
     printk(KERN_CRIT "De-loading fifo module\n");
     printk(KERN_CRIT "Destroying workqueue\n");
     destroy_workqueue(wq);
+    
     
     printk(KERN_CRIT "Freeing memory of the buffer\n");
     for(i = 0; i<size; i++)
