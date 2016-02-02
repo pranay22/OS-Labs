@@ -28,11 +28,13 @@ static struct semaphore full_sema;
 static struct semaphore empty_sema;
 static struct semaphore mutex;
 static struct semaphore writers_mutex;
-static struct semaphore readers_mutex;
-static struct semaphore accesses_mutex;
+static struct semaphore readers_mutex; 
+static struct semaphore current_accesses_mutex; //Mutex to protect operations on number of user accesses
+static struct semaphore users_mutex;  //Mutex used by user dev_read;
 
 static struct data_item* buffer = NULL;
 static struct workqueue_struct* wq = NULL;
+static unsigned int access_control = 1;
 static unsigned int read_index =0;
 static unsigned int write_index = 0;
 static unsigned int qid = 0;
@@ -45,7 +47,8 @@ static unsigned int writers; // current number of writers
 static unsigned int total_writes; //Total writes
 static unsigned int total_reads; // Total reads 
 static unsigned int current_accesses; // current accesses
-
+static unsigned int user_reads=0;
+static unsigned int user_writes=0;
 unsigned int kwrite (struct data_item data)
 {
   
@@ -79,31 +82,62 @@ struct data_item kread (void)
 {
     struct data_item data;
     
-    down(&readers_mutex);
+    down_interruptible(&readers_mutex);
     readers++;
     up(&readers_mutex);
     
-    down(&empty_sema);
+    down_interruptible(&empty_sema);
     
-    down(&mutex);
+    down_interruptible(&mutex);
     data = buffer[read_index];
     read_index=(read_index+1)%size;
     total_reads++;
-    down(&mutex);
+    up(&mutex);
     
     up(&full_sema);
     
-    down(&readers_mutex);
+    down_interruptible(&readers_mutex);
     readers--;
     up(&readers_mutex);
     
     return data;
 }
 
+unsigned int minSize (unsigned int num)
+{
+    int p = 0;
+    while(num)
+    {
+        p++;
+        num/=10;
+    }
+    return p;
+}
 
 ssize_t dev_read (struct file *filep, char __user *buff, size_t len, loff_t *offset)
 {
-
+    struct data_item data;
+    char * msg;
+    if(!access_control)
+    {
+        access_control++;
+        up(&users_mutex);
+        return 0;
+    }
+    else{
+        
+        data = kread();
+        msg = (char*)kmalloc(strlen(data.msg)+minSize(data.qid)+minSize(data.time)+10,GFP_KERNEL);
+        sprintf(msg,"%u,%llu,%s",data.qid,data.time,data.msg);
+        printk(KERN_CRIT "Read:%s\n",msg);
+        if(down_interruptible(&users_mutex))
+            return -ERESTARTSYS;
+        user_reads++;
+        len = strlen(msg);
+        copy_to_user(buff,msg,len);
+        access_control--;
+        return len;       
+    }
     return 0;
 }
 
@@ -134,16 +168,17 @@ struct data_item parse(char * user_msg, size_t len)
     for(i=comma1+1; i<comma2; i++)
         data.time = data.time*10+(int)user_msg[i]-'0';
         
-    data.msg = kmalloc(len-comma2-2, GFP_KERNEL);
-    for(i=0; i<len-comma2-1; i++)
+    data.msg = kmalloc(len-comma2-1, GFP_KERNEL);
+    for(i=0; i<len-comma2-2; i++)
         data.msg[i]=user_msg[comma2+1+i];
-    
+    data.msg[i]='\0';
     return data;
      
 }
 
 ssize_t dev_write (struct file *filep, char const __user *buff, size_t len, loff_t *offset)
 {
+
     char * copy =  (char*) kmalloc(len*sizeof(char),GFP_KERNEL);
     struct data_item data;
     struct timeval tv;
@@ -164,29 +199,29 @@ ssize_t dev_write (struct file *filep, char const __user *buff, size_t len, loff
         printk(KERN_ERR "Message from user is not well constructed\n");
         return -EINVAL;
     }
-    printk(KERN_CRIT "qid=%d,time=%llu,msg=%s\n",data.qid,data.time,data.msg);
+    printk(KERN_CRIT "Write:qid=%d,time=%llu,msg=%s\n",data.qid,data.time,data.msg);
     
-    
-    
+    user_writes++;
+    kwrite(data);
+       
     return len;    
 }
 
 int dev_open (struct inode * inode, struct file * filep){
     
-    if(down_interruptible(&accesses_mutex))
+    if(down_interruptible(&current_accesses_mutex))
         return -ERESTARTSYS;
     
     current_accesses++;
-    up(&accesses_mutex);  
+    up(&current_accesses_mutex);  
     return 0;
 }
 int dev_release (struct inode *inode, struct file * filep){
     
-    if(down_interruptible(&accesses_mutex))
-        return -ERESTARTSYS;
-    
+    if(down_interruptible(&current_accesses_mutex))
+         return -ERESTARTSYS;
     current_accesses--;
-                up(&accesses_mutex);  
+    up(&current_accesses_mutex);  
      return 0;
 }
 
@@ -220,7 +255,8 @@ static int __init fifo_init(void)
     sema_init(&readers_mutex,1);
     sema_init(&empty_sema,0);
     sema_init(&full_sema,size);
-    sema_init(&accesses_mutex,1);
+    sema_init(&current_accesses_mutex,1);
+    sema_init(&users_mutex,1);
     /*Intialiting statistic variable*/
     writers=0;
     readers=0;
