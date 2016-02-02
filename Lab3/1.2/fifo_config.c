@@ -249,6 +249,7 @@ ssize_t proc_read (struct file *filep, char __user *buff, size_t len, loff_t *of
     long int sequence = -1;
     long int accesses = -1;
     long int stored = -1;
+    long int fill = -1;
     if(!proc_control)
     {
         proc_control++;
@@ -265,7 +266,7 @@ ssize_t proc_read (struct file *filep, char __user *buff, size_t len, loff_t *of
         if(write_index<read_index)
             empty = (long int) read_index-write_index;
         else
-            empty = (long int) size -write_index+read_index+1;
+            empty = (long int) size -write_index+read_index;
         insertions = total_writes;
         removals = total_reads;
         sequence = qid;
@@ -277,12 +278,13 @@ ssize_t proc_read (struct file *filep, char __user *buff, size_t len, loff_t *of
         accesses = current_accesses;
         up(&current_accesses_mutex);
         stored = size -empty;
+        fill = stored/size;
         
-        sprintf(msg,"Current Fill:\nStored item=%ld, empty places=%ld, fill(percentage)=%ld\nTotal:\ninsertions=%ld, removals=%ld\nSequence number:%ld\nCurrent accesses=%ld\n",stored,empty,stored/size,insertions,removals,sequence,accesses);
+        sprintf(msg,"Current Fill:\nStored item=%ld, empty places=%ld, fill(percentage)=%lu\nTotal:\ninsertions=%ld, removals=%ld\nSequence number:%ld\nCurrent accesses=%ld\n",stored,empty,fill,insertions,removals,sequence,accesses);
         if(down_interruptible(&proc_mutex))
             return -ERESTARTSYS;
         copy_to_user(buff,msg,strlen(msg));
-        proc_control++;
+        proc_control--;
         return strlen(msg);
     }
 }
