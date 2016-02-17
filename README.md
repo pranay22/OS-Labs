@@ -8,3 +8,7 @@ Repository for OS Labs (WS 2015-16)
 2. Saad Ouassil Allak  
 3. Pranay Sarkar  
 4. Floriment Klinaku
+
+
+
+Update: 17/02/2016: Lab completed. Repository type changed Private -> Public.  
